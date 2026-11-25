@@ -929,7 +929,9 @@ elif st.session_state.get("da_du_doan"):
                         ml = w_ml * row["Diem_ML"] * 100
                         ng = w_nganh * row["Diem_nganh"] * 100
                         st_ = w_st * row["Diem_so_thich"] * 100
-                        w_ml, w_ng, w_st = (
+                        # Ti le (%) moi nguon trong thanh diem; dat ten rieng de
+                        # khong ghi de trong so w_ml / w_st dung cho cac hang sau.
+                        p_ml, p_ng, p_st = (
                             (x / pct * 100 if pct > 0 else 0) for x in (ml, ng, st_)
                         )
                         rows_html += f"""
@@ -938,7 +940,7 @@ elif st.session_state.get("da_du_doan"):
                             <div class="rank-body">
                                 <div class="rank-name">{row['Nghe_viet']}</div>
                                 <div class="rank-en">{row['Nghe_anh']}</div>
-                                <div class="bar"><div class="stack" style="width:{pct:.1f}%"><span class="s-ml" style="width:{w_ml:.1f}%"></span><span class="s-ng" style="width:{w_ng:.1f}%"></span><span class="s-st" style="width:{w_st:.1f}%"></span></div></div>
+                                <div class="bar"><div class="stack" style="width:{pct:.1f}%"><span class="s-ml" style="width:{p_ml:.1f}%"></span><span class="s-ng" style="width:{p_ng:.1f}%"></span><span class="s-st" style="width:{p_st:.1f}%"></span></div></div>
                                 <div class="rank-src">
                                     <span><i class="dot s-ml"></i>ML {ml:.1f}</span>
                                     <span><i class="dot s-ng"></i>Ngành {ng:.1f}</span>
