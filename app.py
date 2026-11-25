@@ -458,7 +458,14 @@ mo_ta = {
 # w_ml toi da 50% va giam theo do tu tin cua mo hinh: khi nguoi dung de
 # cac nang luc ngang nhau, mo hinh chi doan mo (nghe cao nhat ~30%) nen
 # phan ML gan nhu khong tinh; phan con lai chia cho nganh/so thich theo 3:2.
-# Trong so 1.0 = nghe dung chuyen nganh, 0.5 = nghe lien quan.
+#
+# Moi nguon cho moi nghe mot muc phu hop tu 0 den 1 (khong chia deu cho
+# cac nghe), nen Diem cuoi = 100% khi ca ba nguon cung xep nghe do cao nhat:
+#   - Nganh hoc: 1.0 = nghe dung chuyen nganh, 0.5 = nghe lien quan.
+#   - So thich: lay muc cao nhat trong cac linh vuc da chon, nen chon them
+#     linh vuc khong lam loang diem cua linh vuc khac.
+#   - ML: xac suat cua nghe chia cho xac suat lon nhat (nghe ML xep dau = 1).
+# Nho vay nganh hoc (trong so lon hon) khong bi mot so thich duy nhat lan at.
 
 TRONG_SO = {"ml": 0.5, "nganh": 0.3, "so_thich": 0.2}
 
@@ -517,15 +524,14 @@ so_thich_nghe = {
 }
 
 
-def phan_bo_theo_luat(danh_sach_nghe, cac_luat):
-    """Cong trong so cua cac luat cho tung nghe roi chuan hoa tong = 1."""
+def muc_phu_hop_theo_luat(danh_sach_nghe, cac_luat):
+    """Muc phu hop 0-1 cua tung nghe: trong so cao nhat trong cac luat."""
     diem = pd.Series(0.0, index=danh_sach_nghe)
     for luat in cac_luat:
         for nghe, w in luat.items():
             if nghe in diem.index:
-                diem[nghe] += w
-    tong = diem.sum()
-    return diem / tong if tong > 0 else diem
+                diem[nghe] = max(diem[nghe], w)
+    return diem
 
 
 # ==========================================
@@ -854,12 +860,13 @@ elif st.session_state.get("da_du_doan"):
 
         diem_nghe = pd.DataFrame({
             "Nghe_anh": nghe_anh,
-            "Diem_ML": xac_suat_ml,
+            # Dua ve thang 0-1 nhu hai nguon luat: nghe ML xep dau = 1
+            "Diem_ML": xac_suat_ml / xac_suat_ml.max(),
         })
-        diem_nghe["Diem_nganh"] = phan_bo_theo_luat(
+        diem_nghe["Diem_nganh"] = muc_phu_hop_theo_luat(
             nghe_anh, [nganh_nghe.get(nganh, {})]
         ).to_numpy()
-        diem_nghe["Diem_so_thich"] = phan_bo_theo_luat(
+        diem_nghe["Diem_so_thich"] = muc_phu_hop_theo_luat(
             nghe_anh, [so_thich_nghe.get(s, {}) for s in so_thich]
         ).to_numpy()
         diem_nghe["Diem"] = (
@@ -956,7 +963,8 @@ elif st.session_state.get("da_du_doan"):
                         f"(độ tự tin {do_tin_cay * 100:.0f}%) + <b>{w_nganh * 100:.0f}%</b> ngành học + "
                         f"<b>{w_st * 100:.0f}%</b> lĩnh vực quan tâm. Mô hình ML được tối đa 50% "
                         "khi nó tự tin; nếu năng lực của bạn chưa có điểm nổi bật, phần ML sẽ nhỏ lại. "
-                        "Các số ML / Ngành / Sở thích là điểm mỗi nguồn đóng góp."
+                        "Các số ML / Ngành / Sở thích là điểm mỗi nguồn đóng góp; một nghề đạt 100% "
+                        "khi cả ba nguồn đều xếp nghề đó phù hợp nhất."
                     )
 
             with st.container(border=True):
